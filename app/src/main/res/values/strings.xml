@@ -118,6 +118,11 @@
     <string name="expenses_recent_title">Recent Transactions</string>
     <string name="expenses_empty_title">No transactions yet</string>
     <string name="expenses_empty_desc">Track your expenses to maintain clarity and control.</string>
+    <string name="expenses_chart_title">Category Breakdown</string>
+    <string name="expenses_chart_desc">Visual spending distribution by category</string>
+    <string name="expenses_chart_empty">No expense data yet for pie chart</string>
+    <string name="expenses_chart_total_expense">Total</string>
+    <string name="expenses_chart_tap_hint">Tap a category to highlight</string>
 
     <string name="expenses_dialog_add_title">Add Expense / Income</string>
     <string name="expenses_dialog_edit_title">Edit Transaction</string>

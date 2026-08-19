@@ -65,6 +65,7 @@ import com.example.data.model.TransactionType
 import com.example.ui.theme.AmberImportant
 import com.example.ui.theme.CoralUrgent
 import com.example.ui.theme.EmeraldSuccess
+import com.example.ui.components.ExpensePieChartCard
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -279,6 +280,11 @@ fun ExpensesScreen(
                         )
                     }
                 }
+            }
+
+            // Category Breakdown Pie Chart
+            item {
+                ExpensePieChartCard(expenses = actualExpenses)
             }
 
             // Tab Selector: History vs Impulse List

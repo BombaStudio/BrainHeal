@@ -113,6 +113,11 @@
     <string name="expenses_recent_title">Son İşlemler</string>
     <string name="expenses_empty_title">Henüz harcama kaydı yok</string>
     <string name="expenses_empty_desc">Harcamalarını kaydederek finansal netlik kazan.</string>
+    <string name="expenses_chart_title">Kategori Dağılımı</string>
+    <string name="expenses_chart_desc">Harcamaların kategorilere göre dağılımı</string>
+    <string name="expenses_chart_empty">Pasta grafiği için henüz harcama kaydı bulunmuyor</string>
+    <string name="expenses_chart_total_expense">Toplam</string>
+    <string name="expenses_chart_tap_hint">Vurgulamak için kategoriye dokunun</string>
 
     <string name="expenses_dialog_add_title">Harcama / Gelir Ekle</string>
     <string name="expenses_dialog_edit_title">İşlemi Düzenle</string>
