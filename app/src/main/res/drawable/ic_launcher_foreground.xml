@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Focus Ring -->
+    <path
+        android:strokeColor="#5EEAD4"
+        android:strokeWidth="3.5"
+        android:fillColor="#00000000"
+        android:pathData="M54,28 A26,26 0 1,0 80,54" />
+    <!-- Inner Target Dot / Spark -->
+    <path
+        android:fillColor="#2DD4BF"
+        android:pathData="M54,38 A16,16 0 1,1 38,54 A16,16 0 0,1 54,38" />
+    <!-- Bold Checkmark / Arrow -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M44,54 L51,61 L68,44" />
+</vector>
+

@@ -1,0 +1,7 @@
+{
+  "name": "Brain Heal",
+  "description": "ADHD dostu yerel ve çevrimdışı görev yönetimi, dürtüsel harcama kontrolü, görsel takvim, zihin boşaltma notları ve minimalist odak modu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
