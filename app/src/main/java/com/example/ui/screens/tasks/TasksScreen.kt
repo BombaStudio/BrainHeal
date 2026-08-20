@@ -1,9 +1,6 @@
 package com.example.ui.screens.tasks
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,24 +28,17 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.FilterAlt
-import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.PlayCircleFilled
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.TipsAndUpdates
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -82,12 +72,15 @@ import java.util.Locale
 
 @Composable
 fun TasksScreen(
-    activeTasks: List<TaskEntity>,
+    activeTasksCount: Int,
+    filteredActiveTasks: List<TaskEntity>,
     completedTasks: List<TaskEntity>,
     selectedEnergy: EnergyLevel?,
     selectedPriority: TaskPriority?,
+    selectedDay: Calendar?,
     onSelectEnergy: (EnergyLevel?) -> Unit,
     onSelectPriority: (TaskPriority?) -> Unit,
+    onSelectDay: (Calendar?) -> Unit,
     onToggleComplete: (TaskEntity) -> Unit,
     onToggleSubtask: (TaskEntity, String) -> Unit,
     onStartFocus: (TaskEntity) -> Unit,
@@ -97,9 +90,6 @@ fun TasksScreen(
     var showTaskDialog by remember { mutableStateOf(false) }
     var taskToEdit by remember { mutableStateOf<TaskEntity?>(null) }
     var showCompletedSection by remember { mutableStateOf(false) }
-
-    // Selected Day filter for visual day calendar (null means "All Days")
-    var selectedDayCalendar by remember { mutableStateOf<Calendar?>(Calendar.getInstance()) }
 
     // Generate 14 days around today
     val daysList = remember {
@@ -115,24 +105,6 @@ fun TasksScreen(
 
     val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
     val headerDateFormat = SimpleDateFormat("d MMMM yyyy, EEEE", Locale.getDefault())
-
-    val filteredActiveTasks = activeTasks.filter { task ->
-        val energyMatches = selectedEnergy == null || task.energyLevel == selectedEnergy
-        val priorityMatches = selectedPriority == null || task.priority == selectedPriority
-        val dayMatches = if (selectedDayCalendar == null) {
-            true
-        } else {
-            val selectedDayStr = dateFormat.format(selectedDayCalendar!!.time)
-            if (task.dueDate != null) {
-                dateFormat.format(Date(task.dueDate)) == selectedDayStr
-            } else {
-                val createdDayStr = dateFormat.format(Date(task.createdAt))
-                val isTodaySelected = isSameDay(selectedDayCalendar!!, Calendar.getInstance())
-                createdDayStr == selectedDayStr || (isTodaySelected && task.createdAt <= selectedDayCalendar!!.timeInMillis)
-            }
-        }
-        energyMatches && priorityMatches && dayMatches
-    }
 
     Scaffold(
         modifier = Modifier.testTag("tasks_screen"),
@@ -159,8 +131,8 @@ fun TasksScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header: Clean Minimalism Focus Mode header with Day Tracking Badge
-            item {
+            // Header
+            item(contentType = "header") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -202,7 +174,7 @@ fun TasksScreen(
             }
 
             // Visual Day-by-Day Calendar Strip Component
-            item {
+            item(contentType = "calendar_strip") {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -210,7 +182,7 @@ fun TasksScreen(
                     ) {
                         // "All" chip
                         item {
-                            val isAllSelected = selectedDayCalendar == null
+                            val isAllSelected = selectedDay == null
                             Surface(
                                 shape = RoundedCornerShape(18.dp),
                                 color = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
@@ -219,7 +191,7 @@ fun TasksScreen(
                                     .width(60.dp)
                                     .height(78.dp)
                                     .clip(RoundedCornerShape(18.dp))
-                                    .clickable { selectedDayCalendar = null }
+                                    .clickable { onSelectDay(null) }
                                     .testTag("day_picker_all")
                             ) {
                                 Column(
@@ -245,7 +217,7 @@ fun TasksScreen(
                                             .padding(horizontal = 6.dp, vertical = 1.dp)
                                     ) {
                                         Text(
-                                            text = "${activeTasks.size}",
+                                            text = "$activeTasksCount",
                                             style = MaterialTheme.typography.labelSmall.copy(
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.Bold
@@ -259,21 +231,11 @@ fun TasksScreen(
 
                         // Daily Day Cards
                         items(daysList, key = { "day_${it.get(Calendar.DAY_OF_YEAR)}_${it.get(Calendar.YEAR)}" }) { cal ->
-                            val isSelected = selectedDayCalendar != null && isSameDay(cal, selectedDayCalendar!!)
+                            val isSelected = selectedDay != null && isSameDay(cal, selectedDay)
                             val isTodayCal = isSameDay(cal, Calendar.getInstance())
                             val dayName = SimpleDateFormat("EEE", Locale.getDefault()).format(cal.time).uppercase()
                             val dayNum = SimpleDateFormat("d", Locale.getDefault()).format(cal.time)
                             val calDateStr = dateFormat.format(cal.time)
-
-                            // Count active tasks matching this day
-                            val dayTaskCount = activeTasks.count { task ->
-                                if (task.dueDate != null) {
-                                    dateFormat.format(Date(task.dueDate)) == calDateStr
-                                } else {
-                                    val createdDayStr = dateFormat.format(Date(task.createdAt))
-                                    createdDayStr == calDateStr || (isTodayCal && task.createdAt <= cal.timeInMillis)
-                                }
-                            }
 
                             Surface(
                                 shape = RoundedCornerShape(18.dp),
@@ -286,7 +248,7 @@ fun TasksScreen(
                                     .width(58.dp)
                                     .height(78.dp)
                                     .clip(RoundedCornerShape(18.dp))
-                                    .clickable { selectedDayCalendar = cal }
+                                    .clickable { onSelectDay(cal) }
                                     .testTag("day_picker_${calDateStr}")
                             ) {
                                 Column(
@@ -309,30 +271,12 @@ fun TasksScreen(
                                         color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                     )
 
-                                    if (dayTaskCount > 0) {
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(CircleShape)
-                                                .background(if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary)
-                                                .padding(horizontal = 6.dp, vertical = 1.dp)
-                                        ) {
-                                            Text(
-                                                text = "$dayTaskCount",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 9.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                ),
-                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        }
-                                    } else {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(4.dp)
-                                                .clip(CircleShape)
-                                                .background(if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f) else Color.Transparent)
-                                        )
-                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f) else Color.Transparent)
+                                    )
                                 }
                             }
                         }
@@ -363,8 +307,8 @@ fun TasksScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (selectedDayCalendar != null) {
-                                        headerDateFormat.format(selectedDayCalendar!!.time)
+                                    text = if (selectedDay != null) {
+                                        headerDateFormat.format(selectedDay.time)
                                     } else {
                                         stringResource(R.string.tasks_title)
                                     },
@@ -382,14 +326,14 @@ fun TasksScreen(
                                     )
                                 )
 
-                                if (selectedDayCalendar != null && !isSameDay(selectedDayCalendar!!, Calendar.getInstance())) {
+                                if (selectedDay != null && !isSameDay(selectedDay, Calendar.getInstance())) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
                                         color = MaterialTheme.colorScheme.primaryContainer,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(8.dp))
-                                            .clickable { selectedDayCalendar = Calendar.getInstance() }
+                                            .clickable { onSelectDay(Calendar.getInstance()) }
                                     ) {
                                         Text(
                                             text = stringResource(R.string.tasks_calendar_today),
@@ -408,7 +352,7 @@ fun TasksScreen(
             // Top Focus Hero Card
             val topTask = filteredActiveTasks.firstOrNull()
             if (topTask != null) {
-                item {
+                item(contentType = "hero_card") {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -476,7 +420,7 @@ fun TasksScreen(
             }
 
             // ADHD Energy & Low-Friction Filter Row
-            item {
+            item(contentType = "energy_filter") {
                 Column(modifier = Modifier.padding(vertical = 2.dp)) {
                     Text(
                         text = stringResource(R.string.tasks_energy_filter_title),
@@ -497,7 +441,7 @@ fun TasksScreen(
                                     .clickable { onSelectEnergy(null) }
                             ) {
                                 Text(
-                                    text = stringResource(R.string.tasks_filter_all_count, activeTasks.size),
+                                    text = stringResource(R.string.tasks_filter_all_count, activeTasksCount),
                                     style = MaterialTheme.typography.labelMedium.copy(
                                         color = if (selectedEnergy == null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                         fontWeight = FontWeight.Bold
@@ -520,7 +464,7 @@ fun TasksScreen(
 
             // Task List
             if (filteredActiveTasks.isEmpty()) {
-                item {
+                item(contentType = "empty_state") {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -542,13 +486,13 @@ fun TasksScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = if (activeTasks.isEmpty()) stringResource(R.string.tasks_all_completed) else if (selectedDayCalendar != null) stringResource(R.string.tasks_calendar_empty_day) else stringResource(R.string.tasks_empty_filter_title),
+                                text = if (activeTasksCount == 0) stringResource(R.string.tasks_all_completed) else if (selectedDay != null) stringResource(R.string.tasks_calendar_empty_day) else stringResource(R.string.tasks_empty_filter_title),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = if (activeTasks.isEmpty()) stringResource(R.string.tasks_empty_desc) else stringResource(R.string.tasks_empty_filter_desc),
+                                text = if (activeTasksCount == 0) stringResource(R.string.tasks_empty_desc) else stringResource(R.string.tasks_empty_filter_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -556,7 +500,11 @@ fun TasksScreen(
                     }
                 }
             } else {
-                items(filteredActiveTasks, key = { it.id }) { task ->
+                items(
+                    items = filteredActiveTasks,
+                    key = { it.id },
+                    contentType = { "task_item" }
+                ) { task ->
                     TaskItemCard(
                         task = task,
                         onToggleComplete = { onToggleComplete(task) },
@@ -573,7 +521,7 @@ fun TasksScreen(
 
             // Completed Tasks Dropdown / Section
             if (completedTasks.isNotEmpty()) {
-                item {
+                item(contentType = "completed_header") {
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                         shape = RoundedCornerShape(12.dp),
@@ -613,7 +561,11 @@ fun TasksScreen(
                 }
 
                 if (showCompletedSection) {
-                    items(completedTasks, key = { "comp_${it.id}" }) { compTask ->
+                    items(
+                        items = completedTasks,
+                        key = { "comp_${it.id}" },
+                        contentType = { "completed_task_item" }
+                    ) { compTask ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -776,7 +728,7 @@ fun TaskItemCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Badges / Tags (spans full card content with equal left & right margins)
+            // Badges / Tags
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -817,7 +769,7 @@ fun TaskItemCard(
                 }
             }
 
-            // Micro subtasks progress bar if any (spans full card content with equal left & right margins)
+            // Micro subtasks progress bar
             if (subtasks.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 val progress = completedSubtasksCount.toFloat() / subtasks.size.toFloat()
@@ -854,7 +806,7 @@ fun TaskItemCard(
                 }
             }
 
-            // Subtasks checklist inside expanded card
+            // Subtasks checklist
             if (expanded && subtasks.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Column(

@@ -44,8 +44,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.model.AppLanguage
-import java.util.Locale
 import com.example.ui.components.CelebrationBanner
 import com.example.ui.components.ConfettiCelebrationOverlay
 import com.example.ui.screens.calendar.CalendarScreen
@@ -58,6 +56,7 @@ import com.example.ui.screens.settings.SettingsScreen
 import com.example.ui.theme.OdakFlowTheme
 import com.example.ui.viewmodel.AppTab
 import com.example.ui.viewmodel.MainViewModel
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
 
@@ -114,66 +113,44 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun OdakFlowApp(viewModel: MainViewModel) {
     val settings by viewModel.appSettings.collectAsStateWithLifecycle()
-    val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
     val celebrationText by viewModel.celebrationText.collectAsStateWithLifecycle()
     val confettiTrigger by viewModel.confettiTrigger.collectAsStateWithLifecycle()
 
-    val activeTasks by viewModel.activeTasks.collectAsStateWithLifecycle()
-    val completedTasks by viewModel.completedTasks.collectAsStateWithLifecycle()
-    val allTasks by viewModel.allTasks.collectAsStateWithLifecycle()
-    val selectedEnergy by viewModel.filterEnergy.collectAsStateWithLifecycle()
-    val selectedPriority by viewModel.filterPriority.collectAsStateWithLifecycle()
-
     val currentFocusTask by viewModel.currentFocusTask.collectAsStateWithLifecycle()
-    val pomodoroMode by viewModel.pomodoroMode.collectAsStateWithLifecycle()
-    val pomodoroRound by viewModel.pomodoroRound.collectAsStateWithLifecycle()
-    val customFocusMinutes by viewModel.customFocusMinutes.collectAsStateWithLifecycle()
-    val customShortBreakMinutes by viewModel.customShortBreakMinutes.collectAsStateWithLifecycle()
-    val customLongBreakMinutes by viewModel.customLongBreakMinutes.collectAsStateWithLifecycle()
-    val focusRemainingSeconds by viewModel.focusRemainingSeconds.collectAsStateWithLifecycle()
-    val focusInitialSeconds by viewModel.focusInitialSeconds.collectAsStateWithLifecycle()
-    val isFocusTimerRunning by viewModel.isFocusTimerRunning.collectAsStateWithLifecycle()
+    val allTasks by viewModel.allTasks.collectAsStateWithLifecycle()
 
-    val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
-    val actualExpenses by viewModel.actualExpenses.collectAsStateWithLifecycle()
-    val impulseWishlist by viewModel.impulseWishlist.collectAsStateWithLifecycle()
-
-    val allEvents by viewModel.allEvents.collectAsStateWithLifecycle()
-    val selectedCalendarDate by viewModel.selectedCalendarDate.collectAsStateWithLifecycle()
-
-    val allNotes by viewModel.allNotes.collectAsStateWithLifecycle()
-    val noteCategories by viewModel.noteCategories.collectAsStateWithLifecycle()
-    val selectedNoteCategory by viewModel.selectedNoteCategory.collectAsStateWithLifecycle()
-
-    val activeFocusTask = currentFocusTask
-    val currentFocusTaskLive = remember(activeFocusTask, allTasks) {
-        if (activeFocusTask == null) null
-        else allTasks.find { it.id == activeFocusTask.id } ?: activeFocusTask
+    val currentFocusTaskLive = remember(currentFocusTask, allTasks) {
+        if (currentFocusTask == null) null
+        else allTasks.find { it.id == currentFocusTask?.id } ?: currentFocusTask
     }
 
     // 1. Single Task Focus Mode takes priority
     if (currentFocusTaskLive != null) {
         val task = currentFocusTaskLive
+        val focusRemainingSeconds by viewModel.focusRemainingSeconds.collectAsStateWithLifecycle()
+        val focusInitialSeconds by viewModel.focusInitialSeconds.collectAsStateWithLifecycle()
+        val isFocusTimerRunning by viewModel.isFocusTimerRunning.collectAsStateWithLifecycle()
+
         Box(modifier = Modifier.fillMaxSize()) {
             FocusSingleTaskScreen(
                 task = task,
                 remainingSeconds = focusRemainingSeconds,
                 initialSeconds = focusInitialSeconds,
                 isRunning = isFocusTimerRunning,
-                onStartTimer = { viewModel.startFocusTimer() },
-                onPauseTimer = { viewModel.pauseFocusTimer() },
-                onResetTimer = { viewModel.resetFocusTimer() },
+                onStartTimer = viewModel::startFocusTimer,
+                onPauseTimer = viewModel::pauseFocusTimer,
+                onResetTimer = viewModel::resetFocusTimer,
                 onAddExtraMinutes = { mins ->
                     viewModel.setFocusDurationMinutes((focusInitialSeconds / 60) + mins)
                 },
                 onToggleSubtask = { subId -> viewModel.toggleSubtask(task, subId) },
                 onCompleteTask = { viewModel.toggleTaskComplete(task) },
-                onClose = { viewModel.closeFocusTask() }
+                onClose = viewModel::closeFocusTask
             )
 
             CelebrationBanner(
                 text = celebrationText,
-                onDismiss = { viewModel.dismissCelebration() },
+                onDismiss = viewModel::dismissCelebration,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 28.dp)
@@ -189,6 +166,16 @@ fun OdakFlowApp(viewModel: MainViewModel) {
 
     // 2. Zen Minimalist Mode (if enabled)
     if (settings.isMinimalistMode) {
+        val activeTasks by viewModel.activeTasks.collectAsStateWithLifecycle()
+        val pomodoroMode by viewModel.pomodoroMode.collectAsStateWithLifecycle()
+        val pomodoroRound by viewModel.pomodoroRound.collectAsStateWithLifecycle()
+        val focusRemainingSeconds by viewModel.focusRemainingSeconds.collectAsStateWithLifecycle()
+        val focusInitialSeconds by viewModel.focusInitialSeconds.collectAsStateWithLifecycle()
+        val isFocusTimerRunning by viewModel.isFocusTimerRunning.collectAsStateWithLifecycle()
+        val customFocusMinutes by viewModel.customFocusMinutes.collectAsStateWithLifecycle()
+        val customShortBreakMinutes by viewModel.customShortBreakMinutes.collectAsStateWithLifecycle()
+        val customLongBreakMinutes by viewModel.customLongBreakMinutes.collectAsStateWithLifecycle()
+
         Box(modifier = Modifier.fillMaxSize()) {
             MinimalistModeScreen(
                 activeTasks = activeTasks,
@@ -200,21 +187,21 @@ fun OdakFlowApp(viewModel: MainViewModel) {
                 customFocusMinutes = customFocusMinutes,
                 customShortBreakMinutes = customShortBreakMinutes,
                 customLongBreakMinutes = customLongBreakMinutes,
-                onSelectMode = { viewModel.setPomodoroMode(it) },
-                onSetCustomDuration = { mode, mins -> viewModel.setCustomPomodoroDuration(mode, mins) },
-                onAdjustMinutes = { viewModel.adjustFocusMinutes(it) },
-                onStartTimer = { viewModel.startFocusTimer() },
-                onPauseTimer = { viewModel.pauseFocusTimer() },
-                onResetTimer = { viewModel.resetFocusTimer() },
-                onToggleTaskComplete = { viewModel.toggleTaskComplete(it) },
-                onToggleSubtask = { task, subId -> viewModel.toggleSubtask(task, subId) },
-                onQuickBrainDump = { viewModel.quickBrainDump(it) },
-                onExitMinimalist = { viewModel.toggleMinimalistMode() }
+                onSelectMode = viewModel::setPomodoroMode,
+                onSetCustomDuration = viewModel::setCustomPomodoroDuration,
+                onAdjustMinutes = viewModel::adjustFocusMinutes,
+                onStartTimer = viewModel::startFocusTimer,
+                onPauseTimer = viewModel::pauseFocusTimer,
+                onResetTimer = viewModel::resetFocusTimer,
+                onToggleTaskComplete = viewModel::toggleTaskComplete,
+                onToggleSubtask = viewModel::toggleSubtask,
+                onQuickBrainDump = viewModel::quickBrainDump,
+                onExitMinimalist = viewModel::toggleMinimalistMode
             )
 
             CelebrationBanner(
                 text = celebrationText,
-                onDismiss = { viewModel.dismissCelebration() },
+                onDismiss = viewModel::dismissCelebration,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 28.dp)
@@ -229,6 +216,8 @@ fun OdakFlowApp(viewModel: MainViewModel) {
     }
 
     // 3. Standard Navigation Mode
+    val currentTab by viewModel.currentTab.collectAsStateWithLifecycle()
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -306,87 +295,119 @@ fun OdakFlowApp(viewModel: MainViewModel) {
                     transitionSpec = { fadeIn() togetherWith fadeOut() },
                     label = "tab_animation"
                 ) { tab ->
-                when (tab) {
-                    AppTab.TASKS -> TasksScreen(
-                        activeTasks = activeTasks,
-                        completedTasks = completedTasks,
-                        selectedEnergy = selectedEnergy,
-                        selectedPriority = selectedPriority,
-                        onSelectEnergy = { viewModel.setEnergyFilter(it) },
-                        onSelectPriority = { viewModel.setPriorityFilter(it) },
-                        onToggleComplete = { viewModel.toggleTaskComplete(it) },
-                        onToggleSubtask = { task, subId -> viewModel.toggleSubtask(task, subId) },
-                        onStartFocus = { viewModel.startFocusOnTask(it) },
-                        onSaveTask = { viewModel.saveTask(it) },
-                        onDeleteTask = { viewModel.deleteTask(it) }
-                    )
+                    when (tab) {
+                        AppTab.TASKS -> {
+                            val activeTasks by viewModel.activeTasks.collectAsStateWithLifecycle()
+                            val filteredActiveTasks by viewModel.filteredActiveTasks.collectAsStateWithLifecycle()
+                            val completedTasks by viewModel.completedTasks.collectAsStateWithLifecycle()
+                            val selectedEnergy by viewModel.filterEnergy.collectAsStateWithLifecycle()
+                            val selectedPriority by viewModel.filterPriority.collectAsStateWithLifecycle()
+                            val selectedDay by viewModel.selectedDayCalendar.collectAsStateWithLifecycle()
 
-                    AppTab.EXPENSES -> ExpensesScreen(
-                        allTransactions = allTransactions,
-                        actualExpenses = actualExpenses,
-                        impulseWishlist = impulseWishlist,
-                        settings = settings,
-                        onSaveExpense = { viewModel.saveExpense(it) },
-                        onDeleteExpense = { viewModel.deleteExpense(it) },
-                        onDecideImpulse = { expense, buy -> viewModel.decideImpulsePurchase(expense, buy) }
-                    )
+                            TasksScreen(
+                                activeTasksCount = activeTasks.size,
+                                filteredActiveTasks = filteredActiveTasks,
+                                completedTasks = completedTasks,
+                                selectedEnergy = selectedEnergy,
+                                selectedPriority = selectedPriority,
+                                selectedDay = selectedDay,
+                                onSelectEnergy = viewModel::setEnergyFilter,
+                                onSelectPriority = viewModel::setPriorityFilter,
+                                onSelectDay = viewModel::setSelectedDay,
+                                onToggleComplete = viewModel::toggleTaskComplete,
+                                onToggleSubtask = viewModel::toggleSubtask,
+                                onStartFocus = viewModel::startFocusOnTask,
+                                onSaveTask = viewModel::saveTask,
+                                onDeleteTask = viewModel::deleteTask
+                            )
+                        }
 
-                    AppTab.CALENDAR -> CalendarScreen(
-                        allEvents = allEvents,
-                        allTasks = allTasks,
-                        selectedDate = selectedCalendarDate,
-                        onSelectDate = { viewModel.selectCalendarDate(it) },
-                        onSaveEvent = { viewModel.saveEvent(it) },
-                        onDeleteEvent = { viewModel.deleteEvent(it) },
-                        onToggleCompleteTask = { viewModel.toggleTaskComplete(it) }
-                    )
+                        AppTab.EXPENSES -> {
+                            val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
+                            val actualExpenses by viewModel.actualExpenses.collectAsStateWithLifecycle()
+                            val impulseWishlist by viewModel.impulseWishlist.collectAsStateWithLifecycle()
 
-                    AppTab.NOTES -> NotesScreen(
-                        allNotes = allNotes,
-                        categories = noteCategories,
-                        selectedCategory = selectedNoteCategory,
-                        onSelectCategory = { viewModel.selectNoteCategory(it) },
-                        onQuickBrainDump = { viewModel.quickBrainDump(it) },
-                        onSaveNote = { viewModel.saveNote(it) },
-                        onDeleteNote = { viewModel.deleteNote(it) },
-                        onTogglePinNote = { viewModel.togglePinNote(it) },
-                        onToggleChecklistItem = { note, id -> viewModel.toggleNoteChecklistItem(note, id) }
-                    )
+                            ExpensesScreen(
+                                allTransactions = allTransactions,
+                                actualExpenses = actualExpenses,
+                                impulseWishlist = impulseWishlist,
+                                settings = settings,
+                                onSaveExpense = viewModel::saveExpense,
+                                onDeleteExpense = viewModel::deleteExpense,
+                                onDecideImpulse = viewModel::decideImpulsePurchase
+                            )
+                        }
 
-                    AppTab.SETTINGS -> {
-                        val cancelledCount = allTransactions.count { it.isImpulseCancelled }
-                        SettingsScreen(
-                            settings = settings,
-                            totalCompletedTasks = settings.completedTasksCountTotal,
-                            cancelledImpulseCount = cancelledCount,
-                            allTasks = allTasks,
-                            allNotes = allNotes,
-                            allExpenses = allTransactions,
-                            allEvents = allEvents,
-                            onSetThemeMode = { viewModel.setThemeMode(it) },
-                            onSetLanguage = { viewModel.setLanguage(it) },
-                            onToggleMinimalistMode = { viewModel.toggleMinimalistMode() },
-                            onUpdateBudgets = { d, m -> viewModel.updateBudgets(d, m) },
-                            onImportBackup = { jsonText, replaceExisting, onResult ->
-                                viewModel.importBackupData(jsonText, replaceExisting, onResult)
-                            }
-                        )
+                        AppTab.CALENDAR -> {
+                            val allEvents by viewModel.allEvents.collectAsStateWithLifecycle()
+                            val allTasks by viewModel.allTasks.collectAsStateWithLifecycle()
+                            val selectedCalendarDate by viewModel.selectedCalendarDate.collectAsStateWithLifecycle()
+
+                            CalendarScreen(
+                                allEvents = allEvents,
+                                allTasks = allTasks,
+                                selectedDate = selectedCalendarDate,
+                                onSelectDate = viewModel::selectCalendarDate,
+                                onSaveEvent = viewModel::saveEvent,
+                                onDeleteEvent = viewModel::deleteEvent,
+                                onToggleCompleteTask = viewModel::toggleTaskComplete
+                            )
+                        }
+
+                        AppTab.NOTES -> {
+                            val allNotes by viewModel.allNotes.collectAsStateWithLifecycle()
+                            val noteCategories by viewModel.noteCategories.collectAsStateWithLifecycle()
+                            val selectedNoteCategory by viewModel.selectedNoteCategory.collectAsStateWithLifecycle()
+
+                            NotesScreen(
+                                allNotes = allNotes,
+                                categories = noteCategories,
+                                selectedCategory = selectedNoteCategory,
+                                onSelectCategory = viewModel::selectNoteCategory,
+                                onQuickBrainDump = viewModel::quickBrainDump,
+                                onSaveNote = viewModel::saveNote,
+                                onDeleteNote = viewModel::deleteNote,
+                                onTogglePinNote = viewModel::togglePinNote,
+                                onToggleChecklistItem = viewModel::toggleNoteChecklistItem
+                            )
+                        }
+
+                        AppTab.SETTINGS -> {
+                            val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
+                            val allTasks by viewModel.allTasks.collectAsStateWithLifecycle()
+                            val allNotes by viewModel.allNotes.collectAsStateWithLifecycle()
+                            val allEvents by viewModel.allEvents.collectAsStateWithLifecycle()
+
+                            SettingsScreen(
+                                settings = settings,
+                                totalCompletedTasks = settings.completedTasksCountTotal,
+                                cancelledImpulseCount = allTransactions.count { it.isImpulseCancelled },
+                                allTasks = allTasks,
+                                allNotes = allNotes,
+                                allExpenses = allTransactions,
+                                allEvents = allEvents,
+                                onSetThemeMode = viewModel::setThemeMode,
+                                onSetLanguage = viewModel::setLanguage,
+                                onToggleMinimalistMode = viewModel::toggleMinimalistMode,
+                                onUpdateBudgets = viewModel::updateBudgets,
+                                onImportBackup = viewModel::importBackupData
+                            )
+                        }
                     }
                 }
-            }
 
-            CelebrationBanner(
-                text = celebrationText,
-                onDismiss = { viewModel.dismissCelebration() },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 10.dp)
-            )
+                CelebrationBanner(
+                    text = celebrationText,
+                    onDismiss = viewModel::dismissCelebration,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 10.dp)
+                )
 
-            ConfettiCelebrationOverlay(
-                triggerTimestamp = confettiTrigger,
-                modifier = Modifier.fillMaxSize()
-            )
+                ConfettiCelebrationOverlay(
+                    triggerTimestamp = confettiTrigger,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

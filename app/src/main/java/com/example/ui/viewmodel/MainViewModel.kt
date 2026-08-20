@@ -26,7 +26,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 enum class AppTab(val titleTr: String) {
     TASKS("Görevler"),
@@ -101,12 +104,50 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _filterPriority = MutableStateFlow<TaskPriority?>(null)
     val filterPriority: StateFlow<TaskPriority?> = _filterPriority.asStateFlow()
 
+    private val _selectedDayCalendar = MutableStateFlow<Calendar?>(Calendar.getInstance())
+    val selectedDayCalendar: StateFlow<Calendar?> = _selectedDayCalendar.asStateFlow()
+
     fun setEnergyFilter(level: EnergyLevel?) {
         _filterEnergy.value = if (_filterEnergy.value == level) null else level
     }
 
     fun setPriorityFilter(priority: TaskPriority?) {
         _filterPriority.value = if (_filterPriority.value == priority) null else priority
+    }
+
+    fun setSelectedDay(cal: Calendar?) {
+        _selectedDayCalendar.value = cal
+    }
+
+    val filteredActiveTasks: StateFlow<List<TaskEntity>> = combine(
+        activeTasks,
+        _filterEnergy,
+        _filterPriority,
+        _selectedDayCalendar
+    ) { tasks, energy, priority, day ->
+        val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+        tasks.filter { task ->
+            val energyMatches = energy == null || task.energyLevel == energy
+            val priorityMatches = priority == null || task.priority == priority
+            val dayMatches = if (day == null) {
+                true
+            } else {
+                val selectedDayStr = dateFormat.format(day.time)
+                if (task.dueDate != null) {
+                    dateFormat.format(Date(task.dueDate)) == selectedDayStr
+                } else {
+                    val createdDayStr = dateFormat.format(Date(task.createdAt))
+                    val isTodaySelected = isSameDay(day, Calendar.getInstance())
+                    createdDayStr == selectedDayStr || (isTodaySelected && task.createdAt <= day.timeInMillis)
+                }
+            }
+            energyMatches && priorityMatches && dayMatches
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private fun isSameDay(c1: Calendar, c2: Calendar): Boolean {
+        return c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
+                c1.get(Calendar.DAY_OF_YEAR) == c2.get(Calendar.DAY_OF_YEAR)
     }
 
     // Task Actions

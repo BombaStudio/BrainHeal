@@ -1,10 +1,12 @@
 package com.example.data.model
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Immutable
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.R
 
+@Immutable
 enum class TaskPriority(
     @StringRes val stringRes: Int,
     val colorHex: Long
@@ -30,6 +32,7 @@ enum class TaskPriority(
     }
 }
 
+@Immutable
 enum class EnergyLevel(
     @StringRes val stringRes: Int,
     @StringRes val shortStringRes: Int,
@@ -72,13 +75,14 @@ enum class EnergyLevel(
     }
 }
 
-
+@Immutable
 data class SubTask(
     val id: String,
     val title: String,
     val isCompleted: Boolean = false
 )
 
+@Immutable
 @Entity(tableName = "tasks")
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
