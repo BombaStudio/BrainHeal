@@ -1,18 +1,85 @@
-*.iml
-.gradle
-.kotlin
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
-.env
+# =========================================================================
+# Android & Gradle Build Artifacts
+# =========================================================================
+# Built Application Packages
+*.apk
+*.ap_
+*.aab
+*.dex
+
+# Release and build output folders
+**/release/
+release/
+build/
+**/build/
+.gradle/
+.kotlin/
+gradle-app.setting
+
+# =========================================================================
+# Keystores, Signing Keys & Certificates (DO NOT COMMIT)
+# =========================================================================
+*.jks
+*.keystore
+*.p12
+*.key
+*.pem
+*.pepk
+keystore.jks
 debug.keystore
+
+# =========================================================================
+# Secrets, Environment & Local Configuration
+# =========================================================================
+local.properties
+secrets.properties
+.env
+.env.*
+!.env.example
+google-services.json
+
+# =========================================================================
+# Android Studio & IntelliJ IDEA
+# =========================================================================
+*.iml
+*.ipr
+*.iws
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/shelf/
+.idea/deploymentTargetSelector.xml
+.idea/.name
+.idea/dataSources/
+.idea/dataSources.local.xml
+
+# =========================================================================
+# NDK / Native Build
+# =========================================================================
+.externalNativeBuild/
+.cxx/
+obj/
+
+# =========================================================================
+# Profiling, Captures & Logs
+# =========================================================================
+/captures/
+*.hprof
+*.log
+
+# =========================================================================
+# Test, Lint & Coverage Reports
+# =========================================================================
+/coverage/
+/reports/
+/lint-results/
+lint/
+
+# =========================================================================
+# OS & System Files
+# =========================================================================
+.DS_Store
+Thumbs.db
